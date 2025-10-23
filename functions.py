@@ -83,3 +83,7 @@ def accuracy(predictions, targets):
     for i, prediction in enumerate(predictions):
         one_hot_predictions[i, np.argmax(prediction)] = 1
     return accuracy_score(one_hot_predictions, targets)
+
+
+def runge2d(x,y):
+    return 1 / ((10*x-5)**2 + (10*y-5)**2 + 1)
