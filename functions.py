@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.metrics import accuracy_score
 
-def mse():
+def mse(y_true, y_pred):
     """TODO: Complete docstring. Reuse code from P1"""
     y_true = np.asarray(y_true)
     y_pred = np.asarray(y_pred)
@@ -40,6 +40,10 @@ def cross_entropy(target, predict):
     return np.sum(-target * np.log(predict))
 
 
+def cross_entropy_der(target, predict):
+    return 1/self.batchsize * np.mean()
+
+
 def softmax(z):
     """Compute softmax values for each set of scores in the rows of the matrix z.
     Used with batched input data."""
@@ -56,7 +60,11 @@ def softmax_vec(z):
 
 def sigmoid(z):
     """TODO: docstring"""
-    return 1 / (1 + np.exp(-z)) 
+    return 1 / (1 + np.exp(-z))
+
+def sigmoid_der(z):
+    sig_diff = np.e**(-z)/(1+np.e**(-z))**2
+    return sig_diff
 
 
 def reLU(target, predict):
@@ -64,17 +72,25 @@ def reLU(target, predict):
     return np.sum(-target * np.log(predict))
 
 
-def leaky_reLU(z, alpha=0.1):
+def leaky_reLU(z, alpha=0.001):
     """TODO: docstring"""
-    return alpha*(np.exp(z)-1) if z < 0 else z
+    return np.where(z > np.zeros(z.shape), z, alpha*z)
 
 
 def ReLU_der(z):
     return np.where(z > 0, 1, 0)
 
+def identity(x):
+    """Identity function used for Linear Regression.
+    """
+    return x
+
+def identity_der(x):
+    return 1
+
 
 def mse_der(predict, target):
-    r = (2/len(predict))*(predict - target)
+    r = (2/len*(predict))*(predict - target)
     return r
 
 
@@ -83,6 +99,10 @@ def accuracy(predictions, targets):
     for i, prediction in enumerate(predictions):
         one_hot_predictions[i, np.argmax(prediction)] = 1
     return accuracy_score(one_hot_predictions, targets)
+
+
+def runge(x):
+    return 1 / ((25*x)**2 + 1)
 
 
 def runge2d(x,y):
