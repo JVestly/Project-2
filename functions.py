@@ -33,6 +33,41 @@ def mse(y_true, y_pred):
 
     else:
         raise ValueError("Inputs must be 1D or 2D arrays")
+    
+def polynomial_features(x, p, intercept=False):
+    """
+    Generate a polynomial feature matrix from input data.
+
+    Parameters
+    ----------
+    x : array-like, shape (n_samples,)
+        Input feature values.
+    p : int
+        Polynomial degree.
+    intercept : bool, default=False
+        If True, includes a column of ones for the intercept term.
+
+    Returns
+    -------
+    ndarray, shape (n_samples, p) or (n_samples, p+1)
+        Design matrix with polynomial features up to degree p.
+    """
+    n = len(x)
+
+    if intercept:
+        X = np.zeros((n, p + 1))
+
+        for i in range(p + 1):
+            X[:, i] = x**i
+
+        return X
+    
+    X = np.zeros((n, p))
+
+    for i in range(1, p + 1):
+        X[:, i - 1] = x**i
+
+    return X
         
 
 def cross_entropy(target, predict):
@@ -67,9 +102,9 @@ def sigmoid_der(z):
     return sig_diff
 
 
-def reLU(target, predict):
+def reLU(z):
     """TODO: Doc. String"""
-    return np.sum(-target * np.log(predict))
+    return np.where(z > 0, z, 0)
 
 
 def leaky_reLU(z, alpha=0.001):
@@ -90,7 +125,7 @@ def identity_der(x):
 
 
 def mse_der(predict, target):
-    r = (2/len*(predict))*(predict - target)
+    r = 2/len(predict)*(predict - target)
     return r
 
 
@@ -107,3 +142,29 @@ def runge(x):
 
 def runge2d(x,y):
     return 1 / ((10*x-5)**2 + (10*y-5)**2 + 1)
+
+
+def scale(X, y):
+    """Homemade scaling function.
+    
+    Parameters
+    ----------
+    X: array-like
+        Polynomial feature matrix (design matrix)
+    
+    y: array
+        List of y_values (generic)
+
+    Returns 
+    -------
+    Scaled X and y based on z-score normalization
+    """
+    X_mean = X.mean(axis=0)
+    X_std = X.std(axis=0)
+    X_std[X_std == 0] = 1
+    X_norm = (X - X_mean) / X_std
+
+    y_mean = y.mean()
+    y_centered = y-y_mean
+
+    return X_norm, y_centered
