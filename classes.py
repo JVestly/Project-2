@@ -37,7 +37,7 @@ class NeuralNetwork():
     def feed_forward(self):
         a = self.input
         for (W, b), activation_func in zip(self.weights, self.act_func):
-            z = np.matmul(a, W.T) + b
+            z = a@W + b
             a = activation_func(z)
         return a
     
@@ -68,29 +68,29 @@ class NeuralNetwork():
         a = self.input
         for (W, b), activation_func in zip(self.weights, self.act_func):
             layer_inputs.append(a)
-            z = np.matmul(a, W.T) + b
+            z = a @ W + b
             a = activation_func(z)
             zs.append(z)
         return layer_inputs, zs, a
     
     
     def backpropagation_batched(self, input, layers, target, cost_der=mse_der):
-        layer_inputs, zs, predict = self.feed_forward_saver_batched(input, layers)
+        layer_inputs, zs, predict = self.feed_forward_saver_batched()
         layer_grads = [() for layer in layers]
 
-        for i in reversed(range(len(layers))):
-            layer_input, z, self.act_der = layer_inputs[i], zs[i], self.act_der[i]
+        for i in reversed(range(len(self.weights))):
+            layer_input, z, act_der = layer_inputs[i], zs[i], self.act_der[i]
         
             if i == len(layers) - 1:
                 dC_da = cost_der(predict, target)
             else:
                 (W, b) = layers[i + 1]
                 dC_da = dC_dz @ W.T
-            dC_dz = dC_da * self.act_der(z)
-            dC_da = dC_dz @ W.T
+
+            dC_dz = dC_da * act_der(z)
             dC_dW = np.matmul(layer_input.T,dC_dz)
 
-            dC_db = dC_dz
+            dC_db = np.mean(dC_dz, axis=0)
             layer_grads[i] = (dC_dW, dC_db)
         return layer_grads
     
@@ -100,12 +100,14 @@ class NeuralNetwork():
         return mse(predict, target)
     
     
-    def update_weights(self,  layers_grad, learning_rate):
+    def update_weights(self, layers_grad, learning_rate):
+        k = 0
         for (W, b), (W_g, b_g) in zip(self.weights, layers_grad):
             W -= learning_rate*W_g
             b -= learning_rate*b_g
 
-        return W,b
+            self.weights[k] =  W,b
+            k += 1
     
     
     def train_network(self, targets, learning_rate=0.001, epochs=100):
@@ -113,7 +115,7 @@ class NeuralNetwork():
         for i in range(epochs):
             layers_grad = self.backpropagation_batched(self.input, self.weights, targets)
 
-        return self.update_weights(self.weights, layers_grad, learning_rate)
+        return self.update_weights(layers_grad, learning_rate)
     
 
 
@@ -129,22 +131,28 @@ if __name__ == "__main__":
     from functions import accuracy, sigmoid, softmax_vec
     from autograd import grad
 
-    iris = datasets.load_iris()
-    inputs = iris.data
-    targets = targets = np.zeros((len(iris.data), 3))
-    for i, t in enumerate(iris.target): 
-        targets[i, t] = 1
-
-    NNLinReg = NeuralNetwork(sigmoid_der, sigmoid)
-
-    network_input_size = 4
     np.random.seed(50)
-    activation_funcs = [sigmoid, softmax_vec]
-    layer_output_sizes = [4,3]
-    layers = NNLinReg.create_layers_batched(network_input_size, layer_output_sizes)
-    print(layers[:5])
-    NNLinReg.train_network(inputs, layers, activation_funcs, targets)
-    print(layers[:5])
-    predictions = NNLinReg.feed_forward_saver_batched(inputs, layers, activation_funcs)
-    print(predictions.shape)
-    print(accuracy(predictions, targets))
+    n = 100
+    x = np.linspace(-1, 1, n)
+    y = runge(x) + np.random.normal(0, 0.1, n)
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=50)
+    n = 6
+    X = polynomial_features(x_train, n)
+    Y = polynomial_features(y_train, n)
+    inputs, y_scaled = scale(X, y)
+    targets = (scale(Y, y))[0]
+    y_mean = np.mean(y)
+    y_centered = y_train - y_mean
+
+    m = len(targets)
+
+    NNLinReg = NeuralNetwork(input=inputs, activation_ders=[sigmoid_der, sigmoid_der, identity_der], activation_funcs=[sigmoid, sigmoid, identity], input_size=n, output_size=[n,4,n])
+    NNLinReg2 = NeuralNetwork(input=inputs, activation_ders=[sigmoid_der, sigmoid_der, sigmoid_der], activation_funcs=[sigmoid, sigmoid, sigmoid], input_size=n, output_size=[n,4,n])
+
+
+    NNLinReg2.train_network(targets)
+    predictions = NNLinReg2.feed_forward_batch()
+
+    plt.scatter(x_train, predictions[:, 0])
+    #plt.plot(x_train, predictions[:,0])
+    plt.show()
