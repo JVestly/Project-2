@@ -1,5 +1,5 @@
-import numpy as np
-from sklearn.metrics import accuracy_score
+from imports import *
+from numpy.linalg import pinv
 
 def mse(y_true, y_pred):
     """TODO: Complete docstring. Reuse code from P1"""
@@ -33,6 +33,70 @@ def mse(y_true, y_pred):
 
     else:
         raise ValueError("Inputs must be 1D or 2D arrays")
+    
+
+def ols(X, y):
+    """
+    Ordinary Least Squares regression.
+
+    Parameters
+    ----------
+    X : ndarray, shape (n_samples, n_features)
+        Design matrix of input features.
+    y : ndarray, shape (n_samples,)
+        Target values.
+
+    Returns
+    -------
+    ndarray, shape (n_features,)
+        Estimated regression coefficients (beta).
+    """
+    return (pinv(X.T @ X)) @ X.T @ y
+
+
+def ridge(X, y, lam=0.1):
+    """
+    Ridge regression.
+
+    Parameters
+    ----------
+    X : ndarray, shape (n_samples, n_features)
+        Design matrix of input features.
+    y : ndarray, shape (n_samples,)
+        Target values.
+    lam : float, default=0.1
+        Regularization strength (lambda).
+
+    Returns
+    -------
+    ndarray, shape (n_features,)
+        Estimated regression coefficients (beta).
+    """
+    n_features = X.shape[1]
+
+    return np.linalg.pinv(X.T @ X + lam * np.eye(n_features)) @ X.T @ y
+
+
+def soft_threshold(z, alpha):
+    """
+    Used element-wise in gradient descent for Lasso regression.
+    Shrinks large values, and sets small values to zero.
+
+    Parameters
+    ----------
+    z : ndarray
+        Predicted betas.
+    alpha : float
+        Threshold value.
+
+    Returns
+    -------
+    float 
+        Estimated regression coefficient (beta).
+        Returns 0 if the absoulte value of y is less than or equal to alpha
+    """
+        
+    return np.sign(z) * np.maximum(np.abs(z) - alpha, 0.0)
     
 def polynomial_features(x, p, intercept=False):
     """
@@ -68,6 +132,38 @@ def polynomial_features(x, p, intercept=False):
         X[:, i - 1] = x**i
 
     return X
+
+
+def gradient(X, y, beta, lam=0.0):
+    """
+    Compute the gradient of the cost function for linear regression.
+
+    Supports both Ordinary Least Squares (OLS) and Ridge regression
+    depending on the value of the regularization parameter `lam`.
+
+    Parameters
+    ----------
+    X : ndarray, shape (n_samples, n_features)
+        Design matrix of input features.
+    y : ndarray, shape (n_samples,)
+        Target values.
+    beta : ndarray, shape (n_features,)
+        Current estimate of regression coefficients.
+    lam : float, default=0.0
+        Regularization parameter.
+        - lam = 0.0: OLS gradient
+        - lam > 0.0: Ridge gradient
+
+    Returns
+    -------
+    ndarray, shape (n_features,)
+        Gradient of the cost function with respect to `beta`.
+    """
+    n = X.shape[0]
+    if lam != 0.0:
+        return (2 / n) * X.T @ ((X @ beta) - y) + 2 * lam * beta
+
+    return (2 / n) * X.T @ ((X @ beta) - y)
         
 
 def cross_entropy(target, predict):
@@ -76,7 +172,7 @@ def cross_entropy(target, predict):
 
 
 def cross_entropy_der(target, predict):
-    return 1/self.batchsize * np.mean()
+    return -(target/predict)
 
 
 def softmax(z):
@@ -107,18 +203,25 @@ def reLU(z):
     return np.where(z > 0, z, 0)
 
 
-def leaky_reLU(z, alpha=0.001):
+def leaky_reLU(z, alpha=0.0001):
     """TODO: docstring"""
     return np.where(z > np.zeros(z.shape), z, alpha*z)
+
+
+def leaky_reLU_der(z, alpha=0.0001):
+    "TODO: ---"
+    return np.where(z > 0, 1, alpha)
 
 
 def ReLU_der(z):
     return np.where(z > 0, 1, 0)
 
+
 def identity(x):
     """Identity function used for Linear Regression.
     """
     return x
+
 
 def identity_der(x):
     return 1
