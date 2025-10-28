@@ -322,6 +322,34 @@ class GradientDescent:
     
         return theta
 
+
+
+    def grad_stochastic_ADAM(self, learn_rate, init_guess, max_iter, n_epochs, tol, batch_size, epsilon, beta1=0.9, beta2=0.999):
+        self.theta_stoch = init_guess
+        X = self._X
+        y = self._y
+
+        M = batch_size   #size of each mini-batch
+        m = int(X.shape[0]/M) #number of minibatches
+        m_t = np.zeros(self.p)
+        v_t = np.zeros(self.p)
+        grad = 1
+        while np.linalg.norm(grad) > tol and self.t < max_iter:
+            for epoch in range(1, n_epochs+1):
+                for i in range(m):
+                    random_index = np.random.randint(X.shape[0]-M)
+                    X_, y_ = X[random_index: random_index+M, :], y[random_index: random_index+M]
+                    g_t = X_.T @ (X_ @ self.theta_stoch - y_) / self.n
+                    m_t = beta1*m_t + (1-beta1)*g_t
+                    v_t = beta2*v_t + (1-beta2)*(g_t**2)
+                    m_hat = m_t / (1-beta1**self.t+epsilon)
+                    v_hat = v_t / (1-beta2**self.t+epsilon)
+                    # Update parameters theta
+                    self.theta_stoch -= learn_rate*m_hat / (np.sqrt(v_hat)+epsilon)
+                    self.t += 1
+            grad = X.T @ (X @ self.theta_stoch - y) / self.n
+
+
         
     def gradStoc(self, batch_size=1, eta=0.1, lam=0.0, shuffle=True):
         """
