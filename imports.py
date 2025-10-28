@@ -6,3 +6,4 @@ from sklearn.metrics import accuracy_score
 from autograd import grad
 from sklearn import datasets
 from sklearn.model_selection import train_test_split
+from numpy.linalg import pinv
