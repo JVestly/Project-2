@@ -2,19 +2,23 @@ from imports import *
 from functions import *
 
 class NeuralNetwork():
-    def __init__(self, input_size, output_size, activation_funcs, activation_ders, cost_fun, cost_der):
+    def __init__(self, input_size, output_size, activation_funcs, activation_ders, cost_fun, cost_der, l1=True):
 
         self.input_size = input_size
         self.output_size = output_size
         self.act_func = activation_funcs
         self.act_der = activation_ders
-        self.cost_der = cost_der
-        self.cost_fun = cost_fun
+        if l1:
+            self.cost_fun = self.cost_l1
+            self.cost_der = self.costl1_der
+        else:
+            self.cost_der = cost_der
+            self.cost_fun = cost_fun
         self.training_info = {"Cost_history": []}
         
         self.weights = self.create_layers_batched()
 
-    def _create_layers_batched(self):
+    def create_layers_batched(self):
         layers = []
         i_size = self.input_size
         for layer_output_size in self.output_size:
@@ -24,14 +28,14 @@ class NeuralNetwork():
             i_size = layer_output_size
         return layers
     
-    def _predict(self, inputs):
+    def predict(self, inputs):
         a = inputs
         for (W, b), activation_func in zip(self.weights, self.act_func):
             z = np.matmul(a, W) + b
             a = activation_func(z)
         return a
     
-    def _feed_forward_saver(self, inputs):
+    def feed_forward_saver(self, inputs):
         layer_inputs = []
         zs = []
         a = inputs
@@ -42,8 +46,8 @@ class NeuralNetwork():
             zs.append(z)
         return layer_inputs, zs, a
     
-    def _backpropagation_batched(self, inputs, targets):
-        layer_inputs, zs, predict = self._feed_forward_saver(inputs)
+    def backpropagation_batched(self, inputs, targets):
+        layer_inputs, zs, predict = self.feed_forward_saver(inputs)
         layer_grads = [() for _ in self.weights]
 
         delta = self.cost_der(predict, targets) * self.act_der[-1](zs[-1])
@@ -69,7 +73,7 @@ class NeuralNetwork():
             a = activation_func(z)
         return a
     
-    def _update_weights(self, layers_grad, learning_rate):
+    def update_weights(self, layers_grad, learning_rate):
         k = 0
         for (W, b), (W_g, b_g) in zip(self.weights, layers_grad):
             W -= learning_rate * W_g
@@ -96,14 +100,14 @@ class NeuralNetwork():
             change_b = new_change_b
             k += 1
 
-    def _cost(self, inputs, targets):
-        predictions = self._predict(inputs)
+    def cost(self, inputs, targets):
+        predictions = self.predict(inputs)
         return self.cost_fun(predictions, targets)
 
     def train_network(self, X_train, y_train, learning_rate=0.001, epochs=100):
         for i in range(epochs):
-            layers_grad = self._backpropagation_batched(X_train, y_train)
-            self._update_weights(layers_grad, learning_rate)
+            layers_grad = self.backpropagation_batched(X_train, y_train)
+            self.update_weights(layers_grad, learning_rate)
 
     def train_SGD(self, input_data, target_data, n_epochs=1000, eta=0.1, minibatch_size=10):
         
@@ -126,77 +130,77 @@ class NeuralNetwork():
                 X_batch = input_data[batch_indices]
                 y_batch = target_data[batch_indices]
                 
-                gradients = self._backpropagation_batched(X_batch, y_batch)
-                self._update_weights(gradients, eta)
+                gradients = self.backpropagation_batched(X_batch, y_batch)
+                self.update_weights(gradients, eta)
             
-            cost_per_epoch.append(self._cost(input_data, target_data))
+            cost_per_epoch.append(self.cost(input_data, target_data))
             
         self.training_info["Cost_history"] = cost_per_epoch
 
-        def train_ADAM(self, X_train, y_train, epochs=100, batch_size=32, 
-            learning_rate=0.001, beta1=0.9, beta2=0.999, epsilon=1e-8):
-            """
-            TODO: Docstring
-            """
-            n_samples = X_train.shape[0]
-            cost_history = []
-            t = 0  
 
-            m = [(np.zeros_like(W), np.zeros_like(b)) for W, b in self.weights]
-            v = [(np.zeros_like(W), np.zeros_like(b)) for W, b in self.weights]
+    def train_ADAM(self, X_train, y_train, epochs=100, batch_size=32, 
+        learning_rate=0.001, beta1=0.9, beta2=0.999, epsilon=1e-8):
+        """
+        TODO: Docstring
+        """
+        n_samples = X_train.shape[0]
+        cost_history = []
+        t = 0  
 
-            for epoch in range(epochs):
-                indices = np.arange(n_samples)
-                np.random.shuffle(indices)
+        m = [(np.zeros_like(W), np.zeros_like(b)) for W, b in self.weights]
+        v = [(np.zeros_like(W), np.zeros_like(b)) for W, b in self.weights]
 
-                for start in range(0, n_samples, batch_size):
-                    end = start + batch_size
-                    batch_idx = indices[start:end]
-                    X_batch = X_train[batch_idx]
-                    y_batch = y_train[batch_idx]
+        for epoch in range(epochs):
+            indices = np.arange(n_samples)
+            np.random.shuffle(indices)
 
-                    grads = self.backpropagation_batched(X_batch, y_batch)
+            for start in range(0, n_samples, batch_size):
+                end = start + batch_size
+                batch_idx = indices[start:end]
+                X_batch = X_train[batch_idx]
+                y_batch = y_train[batch_idx]
 
-                    t += 1  
+                grads = self.backpropagation_batched(X_batch, y_batch)
 
-                    new_weights = []
-                    for idx, ((W, b), (dW, db), (mW, mb), (vW, vb)) in enumerate(zip(self.weights, grads, m, v)):
-                        
-                        mW = beta1 * mW + (1 - beta1) * dW
-                        mb = beta1 * mb + (1 - beta1) * db
-                        vW = beta2 * vW + (1 - beta2) * (dW ** 2)
-                        vb = beta2 * vb + (1 - beta2) * (db ** 2)
+                t += 1  
 
-                        mW_hat = mW / (1 - beta1 ** t)
-                        mb_hat = mb / (1 - beta1 ** t)
-                        vW_hat = vW / (1 - beta2 ** t)
-                        vb_hat = vb / (1 - beta2 ** t)
+                new_weights = []
+                for idx, ((W, b), (dW, db), (mW, mb), (vW, vb)) in enumerate(zip(self.weights, grads, m, v)):
+                    
+                    mW = beta1 * mW + (1 - beta1) * dW
+                    mb = beta1 * mb + (1 - beta1) * db
+                    vW = beta2 * vW + (1 - beta2) * (dW ** 2)
+                    vb = beta2 * vb + (1 - beta2) * (db ** 2)
 
-                        W -= learning_rate * mW_hat / (np.sqrt(vW_hat) + epsilon)
-                        b -= learning_rate * mb_hat / (np.sqrt(vb_hat) + epsilon)
+                    mW_hat = mW / (1 - beta1 ** t)
+                    mb_hat = mb / (1 - beta1 ** t)
+                    vW_hat = vW / (1 - beta2 ** t)
+                    vb_hat = vb / (1 - beta2 ** t)
 
-                        new_weights.append((W, b))
-                        m[idx] = (mW, mb)
-                        v[idx] = (vW, vb)
+                    W -= learning_rate * mW_hat / (np.sqrt(vW_hat) + epsilon)
+                    b -= learning_rate * mb_hat / (np.sqrt(vb_hat) + epsilon)
+
+                    new_weights.append((W, b))
+                    m[idx] = (mW, mb)
+                    v[idx] = (vW, vb)
 
 
-                    self.weights = new_weights
+                self.weights = new_weights
 
-                
-                cost = self.cost(X_train, y_train)
-                cost_history.append(cost)
-
-                self.training_info["Cost_history"] = cost_history
-                
-
-        def cost_l1(self, y_true, y_pred, lam=0.1):
-
-            return mse(y_true, y_pred) + lam * np.sum(np.abs(self.weights[1:]))
-        
-        
-        def costl1_der(self, y_true, y_pred, lam=0.1):
             
-            return mse(y_true, y_pred) + lam * np.sign(self.weights)
+            cost = self.cost(X_train, y_train)
+            cost_history.append(cost)
+
+            self.training_info["Cost_history"] = cost_history
+            
+
+    def cost_l1(self, y_true, y_pred, lam=0.1):
+        return np.mean((y_pred - y_true)**2) + lam * np.mean(np.abs(y_pred))
+    
+    
+    def costl1_der(self, y_true, y_pred, lam=0.1):
+        B = y_true.shape[0]
+        return 2.0 * (y_pred - y_true) / B + lam * np.sign(y_pred)  
 
 
 
