@@ -133,7 +133,70 @@ class NeuralNetwork():
             
         self.training_info["Cost_history"] = cost_per_epoch
 
+        def train_ADAM(self, X_train, y_train, epochs=100, batch_size=32, 
+            learning_rate=0.001, beta1=0.9, beta2=0.999, epsilon=1e-8):
+            """
+            TODO: Docstring
+            """
+            n_samples = X_train.shape[0]
+            cost_history = []
+            t = 0  
 
+            m = [(np.zeros_like(W), np.zeros_like(b)) for W, b in self.weights]
+            v = [(np.zeros_like(W), np.zeros_like(b)) for W, b in self.weights]
+
+            for epoch in range(epochs):
+                indices = np.arange(n_samples)
+                np.random.shuffle(indices)
+
+                for start in range(0, n_samples, batch_size):
+                    end = start + batch_size
+                    batch_idx = indices[start:end]
+                    X_batch = X_train[batch_idx]
+                    y_batch = y_train[batch_idx]
+
+                    grads = self.backpropagation_batched(X_batch, y_batch)
+
+                    t += 1  
+
+                    new_weights = []
+                    for idx, ((W, b), (dW, db), (mW, mb), (vW, vb)) in enumerate(zip(self.weights, grads, m, v)):
+                        
+                        mW = beta1 * mW + (1 - beta1) * dW
+                        mb = beta1 * mb + (1 - beta1) * db
+                        vW = beta2 * vW + (1 - beta2) * (dW ** 2)
+                        vb = beta2 * vb + (1 - beta2) * (db ** 2)
+
+                        mW_hat = mW / (1 - beta1 ** t)
+                        mb_hat = mb / (1 - beta1 ** t)
+                        vW_hat = vW / (1 - beta2 ** t)
+                        vb_hat = vb / (1 - beta2 ** t)
+
+                        W -= learning_rate * mW_hat / (np.sqrt(vW_hat) + epsilon)
+                        b -= learning_rate * mb_hat / (np.sqrt(vb_hat) + epsilon)
+
+                        new_weights.append((W, b))
+                        m[idx] = (mW, mb)
+                        v[idx] = (vW, vb)
+
+
+                    self.weights = new_weights
+
+                
+                cost = self.cost(X_train, y_train)
+                cost_history.append(cost)
+
+                self.training_info["Cost_history"] = cost_history
+                
+
+        def cost_l1(self, y_true, y_pred, lam=0.1):
+
+            return mse(y_true, y_pred) + lam * np.sum(np.abs(self.weights[1:]))
+        
+        
+        def costl1_der(self, y_true, y_pred, lam=0.1):
+            
+            return mse(y_true, y_pred) + lam * np.sign(self.weights)
 
 
 
