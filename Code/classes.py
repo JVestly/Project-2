@@ -14,8 +14,7 @@ class NeuralNetwork():
         
         self.weights = self.create_layers_batched()
 
-
-    def create_layers_batched(self):
+    def _create_layers_batched(self):
         layers = []
         i_size = self.input_size
         for layer_output_size in self.output_size:
@@ -25,16 +24,14 @@ class NeuralNetwork():
             i_size = layer_output_size
         return layers
     
-    
-    def predict(self, inputs):
+    def _predict(self, inputs):
         a = inputs
         for (W, b), activation_func in zip(self.weights, self.act_func):
             z = np.matmul(a, W) + b
             a = activation_func(z)
         return a
     
-    
-    def feed_forward_saver(self, inputs):
+    def _feed_forward_saver(self, inputs):
         layer_inputs = []
         zs = []
         a = inputs
@@ -45,9 +42,8 @@ class NeuralNetwork():
             zs.append(z)
         return layer_inputs, zs, a
     
-    
-    def backpropagation_batched(self, inputs, targets):
-        layer_inputs, zs, predict = self.feed_forward_saver(inputs)
+    def _backpropagation_batched(self, inputs, targets):
+        layer_inputs, zs, predict = self._feed_forward_saver(inputs)
         layer_grads = [() for _ in self.weights]
 
         delta = self.cost_der(predict, targets) * self.act_der[-1](zs[-1])
@@ -67,15 +63,13 @@ class NeuralNetwork():
                 
         return layer_grads
     
-    
     def feed_forward(self, a):
         for (W, b), activation_func in zip(self.weights, self.act_func):
             z = a @ W + b
             a = activation_func(z)
         return a
     
-    
-    def update_weights(self, layers_grad, learning_rate):
+    def _update_weights(self, layers_grad, learning_rate):
         k = 0
         for (W, b), (W_g, b_g) in zip(self.weights, layers_grad):
             W -= learning_rate * W_g
@@ -83,12 +77,33 @@ class NeuralNetwork():
             self.weights[k] = (W, b)
             k += 1
 
-    
+    # Adam replacement for update_weights() - (In progress)
+    def NN_Adam(self, layers_grad, learning_rate, epsilon, beta1=0.9, beta2=0.999):
+        k = 0
+
+    # momentum replacement for udate_weights() - Needs testing!
+    def NN_mom(self, layers_grad, learning_rate, gamma):
+        k = 0
+        change_W = 0
+        change_b = 0
+        for (W, b), (W_g, b_g) in zip(self.weights, layers_grad):
+            new_change_W = learning_rate*W_g + gamma * change_W
+            new_change_b = learning_rate*b_g + gamma * change_b
+            W -= new_change_W
+            b -= new_change_b
+            self.weights[k] = (W, b)
+            change_W = new_change_W
+            change_b = new_change_b
+            k += 1
+
+    def _cost(self, inputs, targets):
+        predictions = self._predict(inputs)
+        return self.cost_fun(predictions, targets)
+
     def train_network(self, X_train, y_train, learning_rate=0.001, epochs=100):
         for i in range(epochs):
-            layers_grad = self.backpropagation_batched(X_train, y_train)
-            self.update_weights(layers_grad, learning_rate)
-
+            layers_grad = self._backpropagation_batched(X_train, y_train)
+            self._update_weights(layers_grad, learning_rate)
 
     def train_SGD(self, input_data, target_data, n_epochs=1000, eta=0.1, minibatch_size=10):
         
@@ -111,18 +126,15 @@ class NeuralNetwork():
                 X_batch = input_data[batch_indices]
                 y_batch = target_data[batch_indices]
                 
-                gradients = self.backpropagation_batched(X_batch, y_batch)
-                self.update_weights(gradients, eta)
+                gradients = self._backpropagation_batched(X_batch, y_batch)
+                self._update_weights(gradients, eta)
             
-            cost_per_epoch.append(self.cost(input_data, target_data))
+            cost_per_epoch.append(self._cost(input_data, target_data))
             
         self.training_info["Cost_history"] = cost_per_epoch
 
 
-    def cost(self, inputs, targets):
-        predictions = self.predict(inputs)
-        return self.cost_fun(predictions, targets)
-    
+
 
 
 class GradientDescent:
@@ -465,8 +477,6 @@ class GradientDescent:
        
         return float(np.linalg.norm(grad)) < self._eps
     
-
-
 
 if __name__ == "__main__":
     from sklearn import datasets
