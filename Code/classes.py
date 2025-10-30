@@ -2,7 +2,7 @@ from imports import *
 from functions import *
 
 class NeuralNetwork():
-    def __init__(self, input_size, output_size, activation_funcs, activation_ders, cost_fun, cost_der, l1=True):
+    def __init__(self, input_size, output_size, activation_funcs, activation_ders, cost_fun, cost_der, l1=False):
 
         self.input_size = input_size
         self.output_size = output_size
@@ -137,6 +137,43 @@ class NeuralNetwork():
             
         self.training_info["Cost_history"] = cost_history
 
+
+    def train_RMS(self, input_data, target_data, epochs=100, batch_size=32, learning_rate=0.001, beta=0.9, epsilon=1e-8):
+        n_samples = input_data.shape[0]
+        cost_history = []
+
+        v = [(np.zeros_like(W), np.zeros_like(b)) for W, b in self.weights]
+
+        for epoch in range(epochs):
+            indices = np.arange(n_samples)
+            np.random.shuffle(indices)
+
+            for start in range(0, n_samples, batch_size):
+                end = start + batch_size
+                batch_idx = indices[start:end]
+                X_batch = input_data[batch_idx]
+                y_batch = target_data[batch_idx]
+
+                grads = self._backpropagation_batched(X_batch, y_batch)
+
+                new_weights = []
+
+                for idx, ((W, b), (dW, db), (vW, vb)) in enumerate(zip(self.weights, grads, v)):
+
+                    vW = beta * vW + (1 - beta) * (dW ** 2)
+                    vb = beta * vb + (1 - beta) * (db ** 2)
+
+                    W -= learning_rate * dW / (np.sqrt(vW) + epsilon)
+                    b -= learning_rate * db / (np.sqrt(vb) + epsilon)
+
+                    new_weights.append((W, b))
+                    v[idx] = (vW, vb)
+
+                self.weights = new_weights
+            cost = self.cost(input_data, target_data)
+            cost_history.append(cost)
+
+            self.training_info["Cost History"] = cost_history
 
     def train_ADAM(self, input_data, target_data, epochs=100, batch_size=32, 
         learning_rate=0.001, beta1=0.9, beta2=0.999, epsilon=1e-8):
