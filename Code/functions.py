@@ -271,3 +271,58 @@ def scale(X, y):
     y_centered = y-y_mean
 
     return X_norm, y_centered
+
+
+def NN_Moment(t, idx, new_weights, learning_rate, W, b, dW, db, param1_W, param1_b, param2_W, param2_b, param1, param2, gamma=0.3):
+
+    change_W = param1_W
+    change_b = param1_b
+    new_change_W = learning_rate*dW + gamma*change_W
+    new_change_b = learning_rate*db + gamma*change_b
+    W -= new_change_W
+    b -= new_change_b
+    new_weights.append((W, b))
+    param1[idx] = (change_W, change_b)  
+
+
+def NN_RMS(t, idx, new_weights, learning_rate, W, b, dW, db, param1_W, param1_b, param2_W, param2_b, param1, param2, beta=0.9, epsilon=1e-8):
+
+    vW = param1_W
+    vb = param1_b
+    vW = beta * vW + (1 - beta) * (dW ** 2)
+    vb = beta * vb + (1 - beta) * (db ** 2)
+
+    W -= learning_rate * dW / (np.sqrt(vW) + epsilon)
+    b -= learning_rate * db / (np.sqrt(vb) + epsilon)
+
+    new_weights.append((W, b))
+    param1[idx] = (vW, vb)
+
+
+def NN_ADAM(t, idx, new_weights, learning_rate, W, b, dW, db, param1_W, param1_b, param2_W, param2_b, param1, param2, beta1=0.9, beta2=0.999, epsilon=1e-8):
+
+    mW = param1_W
+    mb = param1_b
+    vW = param2_W
+    vb = param2_b
+
+    mW = beta1 * mW + (1 - beta1) * dW
+    mb = beta1 * mb + (1 - beta1) * db
+    vW = beta2 * vW + (1 - beta2) * (dW ** 2)
+    vb = beta2 * vb + (1 - beta2) * (db ** 2)
+
+    mW_hat = mW / (1 - beta1 ** t)
+    mb_hat = mb / (1 - beta1 ** t)
+    vW_hat = vW / (1 - beta2 ** t)
+    vb_hat = vb / (1 - beta2 ** t)
+
+    W -= learning_rate * mW_hat / (np.sqrt(vW_hat) + epsilon)
+    b -= learning_rate * mb_hat / (np.sqrt(vb_hat) + epsilon)
+
+    new_weights.append((W, b))
+    param1[idx] = (mW, mb)
+    param2[idx] = (vW, vb)
+
+
+
+

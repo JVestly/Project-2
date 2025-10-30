@@ -81,25 +81,6 @@ class NeuralNetwork():
             self.weights[k] = (W, b)
             k += 1
 
-    # Adam replacement for update_weights() - (In progress)
-    def NN_Adam(self, layers_grad, learning_rate, epsilon, beta1=0.9, beta2=0.999):
-        k = 0
-
-    # momentum replacement for udate_weights() - Needs testing!
-    def NN_mom(self, layers_grad, learning_rate, gamma):
-        k = 0
-        change_W = 0
-        change_b = 0
-        for (W, b), (W_g, b_g) in zip(self.weights, layers_grad):
-            new_change_W = learning_rate*W_g + gamma * change_W
-            new_change_b = learning_rate*b_g + gamma * change_b
-            W -= new_change_W
-            b -= new_change_b
-            self.weights[k] = (W, b)
-            change_W = new_change_W
-            change_b = new_change_b
-            k += 1
-
     def cost(self, inputs, targets):
         predictions = self.predict(inputs)
         return self.cost_fun(predictions, targets)
@@ -109,126 +90,127 @@ class NeuralNetwork():
             layers_grad = self._backpropagation_batched(X_train, y_train)
             self._update_weights(layers_grad, learning_rate)
 
-    def train_SGD(self, input_data, target_data, epochs=1000, eta=0.1, batch_size=10):
+    def train_SGD(self, input_data, target_data, epochs=1000, batch_size=32, learning_rate=0.1, functional=False):
         
         n_samples = input_data.shape[0]
-        iterations_per_epoch = int(n_samples / batch_size)
-        
-        all_indices = np.arange(n_samples)
         cost_history = []
+        if functional:
+            param1 = [(np.zeros_like(W), np.zeros_like(b)) for W, b in self.weights]
+            param2 = [(np.zeros_like(W), np.zeros_like(b)) for W, b in self.weights]
+            t = 0
 
         for epoch in range(epochs):
+            indices = np.arange(n_samples)
+            np.random.shuffle(indices)
             
-            np.random.shuffle(all_indices)
-            
-            for i in range(iterations_per_epoch):
-                start = i * batch_size
-                stop = (i + 1) * batch_size
-                
-                batch_indices = all_indices[start:stop]
-                
-                X_batch = input_data[batch_indices]
-                y_batch = target_data[batch_indices]
+            for start in range(0, n_samples, batch_size):
+                end = start + batch_size
+                batch_idx = indices[start:end]
+                X_batch = input_data[batch_idx]
+                y_batch = target_data[batch_idx]
                 
                 gradients = self._backpropagation_batched(X_batch, y_batch)
-                self._update_weights(gradients, eta)
+
+                if functional:
+                    t += 1
+                    new_weights = []
+                    for idx, ((W, b), (dW, db), (param1_W, param1_b), (param2_W, param2_b)) in enumerate(zip(self.weights, gradients, param1, param2)):
+                        functional(t, idx, new_weights, learning_rate, W, b, dW, db, param1_W, param1_b, param2_W, param2_b, param1, param2)
+                    self.weights = new_weights
+
+                else:
+                    self._update_weights(gradients, learning_rate)
             
             cost_history.append(self.cost(input_data, target_data))
-            
         self.training_info["Cost_history"] = cost_history
 
+    # def train_RMS(self, input_data, target_data, epochs=100, batch_size=32, learning_rate=0.001, beta=0.9, epsilon=1e-8):
+       
+    #     n_samples = input_data.shape[0]
+    #     cost_history = []
+    #     v = [(np.zeros_like(W), np.zeros_like(b)) for W, b in self.weights]
 
-    def train_RMS(self, input_data, target_data, epochs=100, batch_size=32, learning_rate=0.001, beta=0.9, epsilon=1e-8):
-        n_samples = input_data.shape[0]
-        cost_history = []
+    #     for epoch in range(epochs):
+    #         indices = np.arange(n_samples)
+    #         np.random.shuffle(indices)
 
-        v = [(np.zeros_like(W), np.zeros_like(b)) for W, b in self.weights]
+    #         for start in range(0, n_samples, batch_size):
+    #             end = start + batch_size
+    #             batch_idx = indices[start:end]
+    #             X_batch = input_data[batch_idx]
+    #             y_batch = target_data[batch_idx]
 
-        for epoch in range(epochs):
-            indices = np.arange(n_samples)
-            np.random.shuffle(indices)
+    #             grads = self._backpropagation_batched(X_batch, y_batch)
 
-            for start in range(0, n_samples, batch_size):
-                end = start + batch_size
-                batch_idx = indices[start:end]
-                X_batch = input_data[batch_idx]
-                y_batch = target_data[batch_idx]
+    #             new_weights = []
+    #             # --------------------------------------------------------------------------------
+    #             for idx, ((W, b), (dW, db), (vW, vb)) in enumerate(zip(self.weights, grads, v)):
 
-                grads = self._backpropagation_batched(X_batch, y_batch)
+    #                 vW = beta * vW + (1 - beta) * (dW ** 2)
+    #                 vb = beta * vb + (1 - beta) * (db ** 2)
 
-                new_weights = []
+    #                 W -= learning_rate * dW / (np.sqrt(vW) + epsilon)
+    #                 b -= learning_rate * db / (np.sqrt(vb) + epsilon)
 
-                for idx, ((W, b), (dW, db), (vW, vb)) in enumerate(zip(self.weights, grads, v)):
+    #                 new_weights.append((W, b))
+    #                 v[idx] = (vW, vb)
 
-                    vW = beta * vW + (1 - beta) * (dW ** 2)
-                    vb = beta * vb + (1 - beta) * (db ** 2)
+    #             self.weights = new_weights
+    #         cost_history.append(self.cost(input_data, target_data))
+    #     self.training_info["Cost History"] = cost_history
 
-                    W -= learning_rate * dW / (np.sqrt(vW) + epsilon)
-                    b -= learning_rate * db / (np.sqrt(vb) + epsilon)
+    # def train_ADAM(self, input_data, target_data, epochs=100, batch_size=32, 
+    #     learning_rate=0.001, beta1=0.9, beta2=0.999, epsilon=1e-8):
+    #     """
+    #     TODO: Docstring
+    #     """
+    #     n_samples = input_data.shape[0]
+    #     cost_history = []
+    #     t = 0  
 
-                    new_weights.append((W, b))
-                    v[idx] = (vW, vb)
+    #     m = [(np.zeros_like(W), np.zeros_like(b)) for W, b in self.weights]
+    #     v = [(np.zeros_like(W), np.zeros_like(b)) for W, b in self.weights]
 
-                self.weights = new_weights
-            cost = self.cost(input_data, target_data)
-            cost_history.append(cost)
+    #     for epoch in range(epochs):
+    #         indices = np.arange(n_samples)
+    #         np.random.shuffle(indices)
 
-            self.training_info["Cost History"] = cost_history
+    #         for start in range(0, n_samples, batch_size):
+    #             end = start + batch_size
+    #             batch_idx = indices[start:end]
+    #             X_batch = input_data[batch_idx]
+    #             y_batch = target_data[batch_idx]
 
-    def train_ADAM(self, input_data, target_data, epochs=100, batch_size=32, 
-        learning_rate=0.001, beta1=0.9, beta2=0.999, epsilon=1e-8):
-        """
-        TODO: Docstring
-        """
-        n_samples = input_data.shape[0]
-        cost_history = []
-        t = 0  
+    #             grads = self._backpropagation_batched(X_batch, y_batch)
 
-        m = [(np.zeros_like(W), np.zeros_like(b)) for W, b in self.weights]
-        v = [(np.zeros_like(W), np.zeros_like(b)) for W, b in self.weights]
+    #             t += 1  
 
-        for epoch in range(epochs):
-            indices = np.arange(n_samples)
-            np.random.shuffle(indices)
-
-            for start in range(0, n_samples, batch_size):
-                end = start + batch_size
-                batch_idx = indices[start:end]
-                X_batch = input_data[batch_idx]
-                y_batch = target_data[batch_idx]
-
-                grads = self._backpropagation_batched(X_batch, y_batch)
-
-                t += 1  
-
-                new_weights = []
-                for idx, ((W, b), (dW, db), (mW, mb), (vW, vb)) in enumerate(zip(self.weights, grads, m, v)):
+    #             new_weights = []
+    #             for idx, ((W, b), (dW, db), (mW, mb), (vW, vb)) in enumerate(zip(self.weights, grads, m, v)):
                     
-                    mW = beta1 * mW + (1 - beta1) * dW
-                    mb = beta1 * mb + (1 - beta1) * db
-                    vW = beta2 * vW + (1 - beta2) * (dW ** 2)
-                    vb = beta2 * vb + (1 - beta2) * (db ** 2)
+    #                 mW = beta1 * mW + (1 - beta1) * dW
+    #                 mb = beta1 * mb + (1 - beta1) * db
+    #                 vW = beta2 * vW + (1 - beta2) * (dW ** 2)
+    #                 vb = beta2 * vb + (1 - beta2) * (db ** 2)
 
-                    mW_hat = mW / (1 - beta1 ** t)
-                    mb_hat = mb / (1 - beta1 ** t)
-                    vW_hat = vW / (1 - beta2 ** t)
-                    vb_hat = vb / (1 - beta2 ** t)
+    #                 mW_hat = mW / (1 - beta1 ** t)
+    #                 mb_hat = mb / (1 - beta1 ** t)
+    #                 vW_hat = vW / (1 - beta2 ** t)
+    #                 vb_hat = vb / (1 - beta2 ** t)
 
-                    W -= learning_rate * mW_hat / (np.sqrt(vW_hat) + epsilon)
-                    b -= learning_rate * mb_hat / (np.sqrt(vb_hat) + epsilon)
+    #                 W -= learning_rate * mW_hat / (np.sqrt(vW_hat) + epsilon)
+    #                 b -= learning_rate * mb_hat / (np.sqrt(vb_hat) + epsilon)
 
-                    new_weights.append((W, b))
-                    m[idx] = (mW, mb)
-                    v[idx] = (vW, vb)
+    #                 new_weights.append((W, b))
+    #                 m[idx] = (mW, mb)
+    #                 v[idx] = (vW, vb)
 
 
-                self.weights = new_weights
+    #             self.weights = new_weights
 
             
-            cost = self.cost(input_data, target_data)
-            cost_history.append(cost)
-
-            self.training_info["Cost_history"] = cost_history
+    #         cost_history.append(self.cost(input_data, target_data))
+    #     self.training_info["Cost_history"] = cost_history
             
 
     def _cost_l1(self, y_true, y_pred, lam=0.1):
