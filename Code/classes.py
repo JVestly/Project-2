@@ -2,18 +2,21 @@ from imports import *
 from functions import *
 
 class NeuralNetwork():
-    def __init__(self, input_size, output_size, activation_funcs, activation_ders, cost_fun, cost_der, l1=False):
+    def __init__(self, input_size, output_size, activation_funcs, activation_ders, cost_fun=None, cost_der=None, l1=False, l2=True, lam=0.1):
 
         self.input_size = input_size
         self.output_size = output_size
         self.act_func = activation_funcs
         self.act_der = activation_ders
+        self.lam = lam
         if l1:
-            self.cost_fun = self._cost_l1
-            self.cost_der = self._costl1_der
-        else:
-            self.cost_der = cost_der
-            self.cost_fun = cost_fun
+            self.cost_fun = self.cost_l1
+            self.cost_der = self.costl1_der
+        elif l2:
+            self.cost_der = self.cost_l2
+            self.cost_fun = self.cost_l2
+        self.cost_fun = cost_fun
+        self.cost_der = cost_der
         self.training_info = {"Cost_history": []}
         
         self.weights = self._create_layers_batched()
@@ -50,6 +53,7 @@ class NeuralNetwork():
         layer_inputs, zs, predict = self._feed_forward_saver(inputs)
         layer_grads = [() for _ in self.weights]
 
+        print(np.array(self.act_der).shape)
         delta = self.cost_der(predict, targets) * self.act_der[-1](zs[-1])
         
         for i in reversed(range(len(self.weights))):
