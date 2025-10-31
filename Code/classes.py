@@ -53,8 +53,10 @@ class NeuralNetwork():
         layer_inputs, zs, predict = self._feed_forward_saver(inputs)
         layer_grads = [() for _ in self.weights]
 
-        print(np.array(self.act_der).shape)
-        delta = self.cost_der(predict, targets) * self.act_der[-1](zs[-1])
+        if self.act_func[-1].__name__ == "softmax":
+           delta = self.cost_der(predict, targets)
+        else:
+           delta = self.cost_der(predict, targets) * self.act_der[-1](zs[-1])
         
         for i in reversed(range(len(self.weights))):
             layer_input = layer_inputs[i]
@@ -93,6 +95,35 @@ class NeuralNetwork():
         for i in range(epochs):
             layers_grad = self._backpropagation_batched(X_train, y_train)
             self._update_weights(layers_grad, learning_rate)
+
+    def train_SGD(self, input_data, target_data, n_epochs=1000, eta=0.1, minibatch_size=10):
+        
+        data_size = input_data.shape[0]
+        iterations_per_epoch = int(data_size / minibatch_size)
+        
+        all_indices = np.arange(data_size)
+        cost_per_epoch = []
+
+        for epoch in range(n_epochs):
+            
+            np.random.shuffle(all_indices)
+            
+            for i in range(iterations_per_epoch):
+                start = i * minibatch_size
+                stop = (i + 1) * minibatch_size
+                
+                batch_indices = all_indices[start:stop]
+                
+                X_batch = input_data[batch_indices]
+                y_batch = target_data[batch_indices]
+                
+                gradients = self._backpropagation_batched(X_batch, y_batch)
+                self._update_weights(gradients, eta)
+            
+            cost_per_epoch.append(self.cost(input_data, target_data))
+            
+        self.training_info["Cost_history"] = cost_per_epoch
+
 
     def train_SGD(self, input_data, target_data, epochs=1000, batch_size=32, learning_rate=0.1, functional=False):
         
