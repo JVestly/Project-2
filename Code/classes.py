@@ -123,104 +123,25 @@ class NeuralNetwork():
             
             cost_history.append(self.cost(input_data, target_data))
         self.training_info["Cost_history"] = cost_history
-
-    # def train_RMS(self, input_data, target_data, epochs=100, batch_size=32, learning_rate=0.001, beta=0.9, epsilon=1e-8):
-       
-    #     n_samples = input_data.shape[0]
-    #     cost_history = []
-    #     v = [(np.zeros_like(W), np.zeros_like(b)) for W, b in self.weights]
-
-    #     for epoch in range(epochs):
-    #         indices = np.arange(n_samples)
-    #         np.random.shuffle(indices)
-
-    #         for start in range(0, n_samples, batch_size):
-    #             end = start + batch_size
-    #             batch_idx = indices[start:end]
-    #             X_batch = input_data[batch_idx]
-    #             y_batch = target_data[batch_idx]
-
-    #             grads = self._backpropagation_batched(X_batch, y_batch)
-
-    #             new_weights = []
-    #             # --------------------------------------------------------------------------------
-    #             for idx, ((W, b), (dW, db), (vW, vb)) in enumerate(zip(self.weights, grads, v)):
-
-    #                 vW = beta * vW + (1 - beta) * (dW ** 2)
-    #                 vb = beta * vb + (1 - beta) * (db ** 2)
-
-    #                 W -= learning_rate * dW / (np.sqrt(vW) + epsilon)
-    #                 b -= learning_rate * db / (np.sqrt(vb) + epsilon)
-
-    #                 new_weights.append((W, b))
-    #                 v[idx] = (vW, vb)
-
-    #             self.weights = new_weights
-    #         cost_history.append(self.cost(input_data, target_data))
-    #     self.training_info["Cost History"] = cost_history
-
-    # def train_ADAM(self, input_data, target_data, epochs=100, batch_size=32, 
-    #     learning_rate=0.001, beta1=0.9, beta2=0.999, epsilon=1e-8):
-    #     """
-    #     TODO: Docstring
-    #     """
-    #     n_samples = input_data.shape[0]
-    #     cost_history = []
-    #     t = 0  
-
-    #     m = [(np.zeros_like(W), np.zeros_like(b)) for W, b in self.weights]
-    #     v = [(np.zeros_like(W), np.zeros_like(b)) for W, b in self.weights]
-
-    #     for epoch in range(epochs):
-    #         indices = np.arange(n_samples)
-    #         np.random.shuffle(indices)
-
-    #         for start in range(0, n_samples, batch_size):
-    #             end = start + batch_size
-    #             batch_idx = indices[start:end]
-    #             X_batch = input_data[batch_idx]
-    #             y_batch = target_data[batch_idx]
-
-    #             grads = self._backpropagation_batched(X_batch, y_batch)
-
-    #             t += 1  
-
-    #             new_weights = []
-    #             for idx, ((W, b), (dW, db), (mW, mb), (vW, vb)) in enumerate(zip(self.weights, grads, m, v)):
-                    
-    #                 mW = beta1 * mW + (1 - beta1) * dW
-    #                 mb = beta1 * mb + (1 - beta1) * db
-    #                 vW = beta2 * vW + (1 - beta2) * (dW ** 2)
-    #                 vb = beta2 * vb + (1 - beta2) * (db ** 2)
-
-    #                 mW_hat = mW / (1 - beta1 ** t)
-    #                 mb_hat = mb / (1 - beta1 ** t)
-    #                 vW_hat = vW / (1 - beta2 ** t)
-    #                 vb_hat = vb / (1 - beta2 ** t)
-
-    #                 W -= learning_rate * mW_hat / (np.sqrt(vW_hat) + epsilon)
-    #                 b -= learning_rate * mb_hat / (np.sqrt(vb_hat) + epsilon)
-
-    #                 new_weights.append((W, b))
-    #                 m[idx] = (mW, mb)
-    #                 v[idx] = (vW, vb)
-
-
-    #             self.weights = new_weights
-
-            
-    #         cost_history.append(self.cost(input_data, target_data))
-    #     self.training_info["Cost_history"] = cost_history
             
 
-    def _cost_l1(self, y_true, y_pred, lam=0.1):
-        return np.mean((y_pred - y_true)**2) + lam * np.mean(np.abs(y_pred))
+    def cost_l1(self, y_true, y_pred):
+        return mse(y_true, y_pred) + self.lam * np.sum(np.sum(np.abs(W)) for W,_ in self.weights)
     
     
-    def _costl1_der(self, y_true, y_pred, lam=0.1):
-        B = y_true.shape[0]
-        return 2.0 * (y_pred - y_true) / B + lam * np.sign(y_pred)  
+    def costl1_der(self, y_true, y_pred):
+        return mse_der(y_true, y_pred)
+    
+    
+    def cost_l2(self, y_true, y_pred):
+        mse_term = mse(y_true, y_pred)
+        reg_term = self.lam * sum(np.sum(W**2) for W, _ in self.weights)
+        return mse_term + reg_term
 
+    
+    def costl2_der(self, y_true, y_pred):
+        return mse_der(y_true, y_pred)
+    
 
 
 class GradientDescent:

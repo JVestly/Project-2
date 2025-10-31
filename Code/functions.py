@@ -166,20 +166,22 @@ def gradient(X, y, beta, lam=0.0):
     return (2 / n) * X.T @ ((X @ beta) - y)
         
 
-def cross_entropy(target, predict):
-    """TODO: Complete docstring"""
-    return np.sum(-target * np.log(predict))
-
-
-def cross_entropy_der(target, predict):
-    return -(target/predict)
-
+import numpy as np
 
 def softmax(z):
-    """Compute softmax values for each set of scores in the rows of the matrix z.
-    Used with batched input data."""
-    e_z = np.exp(z - np.max(z, axis=0))
-    return e_z / np.sum(e_z, axis=1)[:, np.newaxis]
+    """Changed to cope with ZeroDivisionError"""
+    z = z - np.max(z, axis=1, keepdims=True)      
+    e_z = np.exp(z)
+    return e_z / np.sum(e_z, axis=1, keepdims=True)
+
+
+def cross_entropy(pred, targets, eps=1e-12):
+    p = np.clip(pred, eps, 1 - eps)
+    return -np.mean(np.sum(targets * np.log(p), axis=1))
+
+
+def cross_entropy_der(pred, targets):
+    return (pred - targets) / targets.shape[0]
 
 
 def softmax_vec(z):
@@ -189,9 +191,21 @@ def softmax_vec(z):
     return e_z / np.sum(e_z)
 
 
+def softmax_der(z):
+    """TODO: Write docstring"""
+    s = softmax(z)
+    N, C = s.shape
+    J = -np.einsum('bi,bj->bij', s, s)   
+    idx = np.arange(C)
+    J[:, idx, idx] += s                  
+    return J
+
+
+
 def sigmoid(z):
     """TODO: docstring"""
     return 1 / (1 + np.exp(-z))
+
 
 def sigmoid_der(z):
     sig_diff = np.e**(-z)/(1+np.e**(-z))**2
