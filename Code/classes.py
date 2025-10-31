@@ -2,19 +2,21 @@ from imports import *
 from functions import *
 
 class NeuralNetwork():
-    def __init__(self, input_size, output_size, activation_funcs, activation_ders, cost_fun=None, cost_der=None, l1=False, l2=True, lam=0.1):
+    def __init__(self, input_size, output_size, activation_funcs, activation_ders, cost_fun=None, cost_der=None, l1=False, l2=True, lam=1e-5):
 
         self.input_size = input_size
         self.output_size = output_size
         self.act_func = activation_funcs
         self.act_der = activation_ders
         self.lam = lam
-        if l1:
-            self.cost_fun = self.cost_l1
-            self.cost_der = self.costl1_der
-        elif l2:
-            self.cost_der = self.cost_l2
-            self.cost_fun = self.cost_l2
+        self.l1 = l1
+        self.l2 = l2
+        # if l1:
+        #     self.cost_fun = self.cost_l1
+        #     self.cost_der = self.costl1_der
+        # elif l2:
+        #     self.cost_der = self.cost_l2
+        #     self.cost_fun = self.cost_l2
         self.cost_fun = cost_fun
         self.cost_der = cost_der
         self.training_info = {"Cost_history": []}
@@ -63,7 +65,15 @@ class NeuralNetwork():
             (W, b) = self.weights[i]
             
             dC_dW = np.matmul(layer_input.T, delta)
+            if self.l1: 
+                dC_dW += 2 * self.lam * np.sign(W)
+            elif self.l2:
+                dC_dW += 2 * self.lam * W
             dC_db = np.sum(delta, axis=0, keepdims=True)
+            if self.l1: 
+                dC_db += 2 * self.lam * np.sign(b)
+            elif self.l2:
+                dC_db += 2 * self.lam * b
             
             layer_grads[i] = (dC_dW, dC_db)
             
