@@ -11,12 +11,6 @@ class NeuralNetwork():
         self.lam = lam
         self.l1 = l1
         self.l2 = l2
-        # if l1:
-        #     self.cost_fun = self.cost_l1
-        #     self.cost_der = self.costl1_der
-        # elif l2:
-        #     self.cost_der = self.cost_l2
-        #     self.cost_fun = self.cost_l2
         self.cost_fun = cost_fun
         self.cost_der = cost_der
         self.training_info = {"Cost_history": []}
@@ -187,6 +181,9 @@ class NeuralNetwork():
     def costl2_der(self, y_true, y_pred):
         return mse_der(y_true, y_pred)
     
+    
+    def check_autograd(self):
+        return None
 
 
 class GradientDescent:
