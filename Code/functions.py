@@ -358,6 +358,7 @@ def create_and_scale_data(state=50, n=1000, noise_std=0.01):
 
     return X_train, X_test, Y_train, Y_test, x_train, x_test, y_train, y_test
 
+
 def create_and_scale_dataP1(state=50, n=1000, noise_std=0.01):
 
     np.random.seed(state)

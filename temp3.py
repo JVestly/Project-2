@@ -28,6 +28,7 @@ def plot_decision_boundary(model, X, y, ax, title):
     ax.set_title(title)
     ax.set_xticks([])
     ax.set_yticks([])
+    
 
 # --- 3. Try different hidden layer sizes ---
 hidden_sizes = [4, 16, 64, 256]
