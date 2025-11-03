@@ -254,7 +254,7 @@ def accuracy(predictions, targets):
 
 
 def runge(x):
-    return 1 / ((25*x)**2 + 1)
+    return 1 / (25*x**2 + 1)
 
 
 def runge2d(x,y):
@@ -338,5 +338,40 @@ def NN_ADAM(t, idx, new_weights, learning_rate, W, b, dW, db, param1_W, param1_b
     param2[idx] = (vW, vb)
 
 
+def create_and_scale_data(state=50, n=1000, noise_std=0.01):
+    """TODO: Docstring"""
+    np.random.seed(state)
+
+    n = 1000
+    x = np.linspace(-1, 1, n).reshape(-1, 1)
+    y = 1/(1 + 25 * x**2) +  np.random.normal(0, noise_std, x.shape)
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=state)
+
+    scaler_X = StandardScaler()
+    scaler_y = StandardScaler()
+
+    X_train = scaler_X.fit_transform(x_train.reshape(-1,1))
+    Y_train = scaler_y.fit_transform(y_train.reshape(-1,1))
+
+    X_test = scaler_X.transform(x_test.reshape(-1,1))
+    Y_test = scaler_y.transform(y_test.reshape(-1,1))
+
+    return X_train, X_test, Y_train, Y_test, x_train, x_test, y_train, y_test
+
+def create_and_scale_dataP1(state=50, n=1000, noise_std=0.01):
+
+    np.random.seed(state)
+    x = np.linspace(-1, 1, n)
+    y = runge(x) +  np.random.normal(0, noise_std, n)
+    x_train2, x_test2, y_train2, y_test2 = train_test_split(x, y, test_size=0.2, random_state=state)
+
+    n = 10
+    X = polynomial_features(x_train2, n)
+    Y = polynomial_features(x_test2, n)
 
 
+    scaler = StandardScaler(with_mean=True, with_std=True)
+    Xtr_s = scaler.fit_transform(X)
+    Xte_s = scaler.transform(Y)
+
+    return Xtr_s, Xte_s, x_train2, x_test2, y_train2, y_test2
