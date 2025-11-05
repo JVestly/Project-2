@@ -14,6 +14,7 @@ class NeuralNetwork():
         self.cost_fun = cost_fun
         self.cost_der = cost_der
         self.training_info = {"Cost_history": []}
+        self._eps = 1e-8
         
         self.weights = self._create_layers_batched()
 
@@ -86,6 +87,8 @@ class NeuralNetwork():
     def _update_weights(self, layers_grad, learning_rate):
         k = 0
         for (W, b), (W_g, b_g) in zip(self.weights, layers_grad):
+            if self.stopping(W_g) and self.stopping(b_g):
+                break
             W -= learning_rate * W_g
             b -= learning_rate * b_g
             self.weights[k] = (W, b)
@@ -99,35 +102,6 @@ class NeuralNetwork():
         for i in range(epochs):
             layers_grad = self._backpropagation_batched(X_train, y_train)
             self._update_weights(layers_grad, learning_rate)
-
-    def train_SGD(self, input_data, target_data, n_epochs=1000, eta=0.1, minibatch_size=10):
-        
-        data_size = input_data.shape[0]
-        iterations_per_epoch = int(data_size / minibatch_size)
-        
-        all_indices = np.arange(data_size)
-        cost_per_epoch = []
-
-        for epoch in range(n_epochs):
-            
-            np.random.shuffle(all_indices)
-            
-            for i in range(iterations_per_epoch):
-                start = i * minibatch_size
-                stop = (i + 1) * minibatch_size
-                
-                batch_indices = all_indices[start:stop]
-                
-                X_batch = input_data[batch_indices]
-                y_batch = target_data[batch_indices]
-                
-                gradients = self._backpropagation_batched(X_batch, y_batch)
-                self._update_weights(gradients, eta)
-            
-            cost_per_epoch.append(self.cost(input_data, target_data))
-            
-        self.training_info["Cost_history"] = cost_per_epoch
-
 
     def train_SGD(self, input_data, target_data, epochs=1000, batch_size=32, learning_rate=0.1, functional=False):
         
@@ -184,6 +158,24 @@ class NeuralNetwork():
     
     def check_autograd(self):
         return None
+    
+
+    def stopping(self, grad, e=1e-8):
+        """
+        Early-stopping criterion based on the Euclidean norm of the gradient.
+        Parameters
+        ----------
+        grad : array-like
+            Current gradient vector.
+        e : float or None, default None
+            Absolute tolerance. Uses the instance tolerance when None.
+        Returns
+        -------
+        bool
+            True if the gradient norm is below tolerance, else False.
+        """
+       
+        return float(np.linalg.norm(grad)) < e
 
 
 class GradientDescent:
