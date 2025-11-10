@@ -14,10 +14,15 @@ imports.py: contains all imports needed for the running the code.
 To run the code, choose a particular task and go to tests_task.ipynb, and run all:
 
 tests_b.ipynb: contains all tests for task (b), and testing for hyperparameters etc.  
+tests_b2.ipynb: all tests for (b) but with version 2 of SGD, using only one minibatch per epoch.
 tests_c.ipynb: contains tests for benchmarks and validation. With and without regularization.  
 tests_d.ipynb: contains all tests for task (d), with hyperparameter tweaking. Also, it contains a part on overfitting.  
+tests_d2.ipynb: contains tests for (d), but with the use of SGD_v2, as in tests_b2.ipynb.
+helper_d.ipynb: used for parallell processing when tests took long.
 tests_e.ipynb: simply a test-file for testing that L1 and L2 works.  
 tests_f.ipynb: all tests for task (f), doing classification.  
+helper_f.ipynb: contains extensive hyperparameter testing for (f).
+
 
 Note that the commited notebooks are already runned, but to replicate the same results or to change parameters, run all.
 
