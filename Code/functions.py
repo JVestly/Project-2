@@ -2,7 +2,21 @@ from imports import *
 from numpy.linalg import pinv
 
 def mse(y_true, y_pred):
-    """TODO: Complete docstring. Reuse code from P1"""
+    """
+    Mean squared error (MSE) between predictions and true values.
+
+    Parameters
+    ----------
+    y_true : array-like
+        True target values.
+    y_pred : array-like
+        Predicted values.
+
+    Returns
+    -------
+    float
+        Mean squared error.
+    """
     y_true = np.asarray(y_true)
     y_pred = np.asarray(y_pred)
 
@@ -169,30 +183,97 @@ def gradient(X, y, beta, lam=0.0):
 import numpy as np
 
 def softmax(z):
-    """Changed to cope with ZeroDivisionError"""
+    """
+    Compute the softmax of a 2D input array.
+
+    Parameters
+    ----------
+    z : array-like
+        Input matrix.
+
+    Returns
+    -------
+    array-like
+        Softmax probabilities for each row.
+    """
     z = z - np.max(z, axis=1, keepdims=True)      
     e_z = np.exp(z)
     return e_z / np.sum(e_z, axis=1, keepdims=True)
 
 
 def cross_entropy(pred, targets, eps=1e-12):
+    """
+    Cross-entropy loss.
+
+    Parameters
+    ----------
+    pred : array-like
+        Predicted probabilities.
+    targets : array-like
+        One-hot encoded target labels.
+    eps : float, default 1e-12
+        Small value to avoid log(0).
+
+    Returns
+    -------
+    float
+        Cross-entropy loss.
+    """
     p = np.clip(pred, eps, 1 - eps)
     return -np.mean(np.sum(targets * np.log(p), axis=1))
 
 
 def cross_entropy_der(pred, targets):
+    """
+    Derivative of cross-entropy loss.
+
+    Parameters
+    ----------
+    pred : array-like
+        Predicted probabilities.
+    targets : array-like
+        One-hot encoded target labels.
+
+    Returns
+    -------
+    array-like
+        Gradient of the loss.
+    """
     return (pred - targets) / targets.shape[0]
 
 
 def softmax_vec(z):
-    """Compute softmax values for each set of scores in the vector z.
-    Use this function when you use the activation function on one vector at a time"""
+    """
+    Compute softmax for a 1D vector.
+
+    Parameters
+    ----------
+    z : array-like
+        Input vector.
+
+    Returns
+    -------
+    array-like
+        Softmax probabilities.
+    """
     e_z = np.exp(z - np.max(z))
     return e_z / np.sum(e_z)
 
 
 def softmax_der(z):
-    """TODO: Write docstring"""
+    """
+    Compute the derivative (Jacobian) of the softmax function.
+
+    Parameters
+    ----------
+    z : array-like
+        Input matrix.
+
+    Returns
+    -------
+    array-like
+        Jacobian matrix for each sample.
+    """
     s = softmax(z)
     N, C = s.shape
     J = -np.einsum('bi,bj->bij', s, s)   
@@ -203,74 +284,288 @@ def softmax_der(z):
 
 
 def sigmoid(z):
-    """TODO: docstring"""
+    """
+    Sigmoid activation function.
+
+    Parameters
+    ----------
+    z : array-like
+        Input values.
+
+    Returns
+    -------
+    array-like
+        Output of sigmoid.
+    """
     return 1 / (1 + np.exp(-z))
 
 
 def sigmoid_der(z):
+    """
+    Derivative of the sigmoid function.
+
+    Parameters
+    ----------
+    z : array-like
+        Input values.
+
+    Returns
+    -------
+    array-like
+        Derivative of sigmoid.
+    """
     sig_diff = np.exp(-z)/(1+np.e**(-z))**2
     return sig_diff
 
 
 def reLU(z):
-    """TODO: Doc. String"""
+    """
+    ReLU activation function.
+
+    Parameters
+    ----------
+    z : array-like
+        Input values.
+
+    Returns
+    -------
+    array-like
+        Output of ReLU.
+    """
     return np.where(z > 0, z, 0)
 
 
 def leaky_reLU(z, alpha=0.1):
-    """TODO: docstring"""
+    """
+    Leaky ReLU activation function.
+
+    Parameters
+    ----------
+    z : array-like
+        Input values.
+    alpha : float, default 0.1
+        Slope for negative inputs.
+
+    Returns
+    -------
+    array-like
+        Output of Leaky ReLU.
+    """
     return np.where(z > np.zeros(z.shape), z, alpha*z)
 
 
 def leaky_reLU_der(z, alpha=0.1):
-    "TODO: ---"
+    """
+    Derivative of Leaky ReLU.
+
+    Parameters
+    ----------
+    z : array-like
+        Input values.
+    alpha : float, default 0.1
+        Slope for negative inputs.
+
+    Returns
+    -------
+    array-like
+        Derivative values.
+    """
     return np.where(z > 0, 1, alpha)
 
 
 def ReLU_der(z):
+    """
+    Derivative of the ReLU activation.
+
+    Parameters
+    ----------
+    z : array-like
+        Input values.
+
+    Returns
+    -------
+    array-like
+        Derivative values.
+    """
     return np.where(z > 0, 1, 0)
 
 
 def identity(x):
-    """Identity function used for Linear Regression.
+    """
+    Identity activation function.
+
+    Parameters
+    ----------
+    x : array-like
+        Input values.
+
+    Returns
+    -------
+    array-like
+        Output equal to input.
     """
     return x
 
 
 def identity_der(x):
+    """
+    Derivative of the identity function.
+
+    Parameters
+    ----------
+    x : array-like
+        Input values.
+
+    Returns
+    -------
+    int
+        Always 1.
+    """
     return 1
 
 
 def tanh(x):
+    """
+    Hyperbolic tangent activation function.
+
+    Parameters
+    ----------
+    x : array-like
+        Input values.
+
+    Returns
+    -------
+    array-like
+        Output of tanh.
+    """
     return np.tanh(x)
 
 
 def tanh_der(x):
+    """
+    Derivative of the tanh activation.
+
+    Parameters
+    ----------
+    x : array-like
+        Input values.
+
+    Returns
+    -------
+    array-like
+        Derivative of tanh.
+    """
     return 1.0 - np.tanh(x)**2
 
 
 def ELU(x, alpha=0.01):
+    """
+    Exponential Linear Unit activation.
+
+    Parameters
+    ----------
+    x : array-like
+        Input values.
+    alpha : float, default 0.01
+        Scale for negative region.
+
+    Returns
+    -------
+    array-like
+        Output of ELU.
+    """
     return np.where(x < 0, alpha*(np.exp(x)-1), x)
 
 
 def ELU_der(x, alpha=0.01):
+    """
+    Derivative of ELU activation.
+
+    Parameters
+    ----------
+    x : array-like
+        Input values.
+    alpha : float, default 0.01
+        Scale for negative region.
+
+    Returns
+    -------
+    array-like
+        Derivative of ELU.
+    """
     return np.where(x<0, ELU(x) + alpha, 1)
 
 
 def GELU(x):
+    """
+    Gaussian Error Linear Unit activation.
+
+    Parameters
+    ----------
+    x : array-like
+        Input values.
+
+    Returns
+    -------
+    array-like
+        Output of GELU.
+    """
     return 0.5*x *(tanh(np.sqrt(2/np.pi)*(x+0.044715*x**3))) 
 
 
 def GELU_der(x):
+    """
+    Derivative of the GELU activation.
+
+    Parameters
+    ----------
+    x : array-like
+        Input values.
+
+    Returns
+    -------
+    array-like
+        Derivative of GELU.
+    """
     return 0.5 * (1 + np.math.erf(x / np.sqrt(2))) + (x * np.exp(-x**2 / 2)) / np.sqrt(2 * np.pi)
 
 
 def mse_der(predict, target):
+    """
+    Derivative of mean squared error.
+
+    Parameters
+    ----------
+    predict : array-like
+        Predicted values.
+    target : array-like
+        True values.
+
+    Returns
+    -------
+    array-like
+        Gradient of MSE.
+    """
     r = 2/len(predict)*(predict - target)
     return r
 
 
 def accuracy(predictions, targets):
+    """
+    Compute classification accuracy.
+
+    Parameters
+    ----------
+    predictions : array-like
+        Model outputs.
+    targets : array-like
+        True labels (one-hot encoded).
+
+    Returns
+    -------
+    float
+        Accuracy score.
+    """
     one_hot_predictions = np.zeros(predictions.shape)
     for i, prediction in enumerate(predictions):
         one_hot_predictions[i, np.argmax(prediction)] = 1
@@ -278,13 +573,57 @@ def accuracy(predictions, targets):
 
 
 def runge(x):
+    """
+    The Runge function.
+
+    Parameters
+    ----------
+    x : array-like
+        Input values.
+
+    Returns
+    -------
+    array-like
+        1 / (25x^2 + 1)
+    """
     return 1 / (25*x**2 + 1)
 
 
 def runge2d(x,y):
+    """
+    2D Runge function.
+
+    Parameters
+    ----------
+    x : array-like
+        x-values.
+    y : array-like
+        y-values.
+
+    Returns
+    -------
+    array-like
+        1 / ((10x-5)^2 + (10y-5)^2 + 1)
+    """
     return 1 / ((10*x-5)**2 + (10*y-5)**2 + 1)
 
+
 def onehot(y, n=None):
+    """
+    Convert integer labels to one-hot encoding.
+
+    Parameters
+    ----------
+    y : array-like
+        Integer labels.
+    n : int or None, default None
+        Number of classes.
+
+    Returns
+    -------
+    array-like
+        One-hot encoded labels.
+    """
     y = np.asarray(y, dtype=int).ravel()
     n = np.max(y) + 1 if n is None else n
     m = np.zeros((y.size, n))
@@ -319,7 +658,34 @@ def scale(X, y):
 
 
 def NN_Moment(t, idx, new_weights, learning_rate, W, b, dW, db, param1_W, param1_b, param2_W, param2_b, param1, param2, gamma=0.3):
+    """
+    Momentum update for neural network weights.
 
+    Parameters
+    ----------
+    t, idx : int
+        Iteration counters.
+    new_weights : list
+        Updated weights storage.
+    learning_rate : float
+        Learning rate.
+    W, b : array-like
+        Current weights and biases.
+    dW, db : array-like
+        Current gradients.
+    param1_W, param1_b : array-like
+        Previous momentum terms.
+    param2_W, param2_b : ignored
+        Placeholder for RMS/Adam compatibility.
+    param1, param2 : list
+        Parameter storage.
+    gamma : float, default 0.3
+        Momentum factor.
+
+    Returns
+    -------
+    None
+    """
     change_W = param1_W
     change_b = param1_b
     new_change_W = learning_rate*dW + gamma*change_W
@@ -331,7 +697,21 @@ def NN_Moment(t, idx, new_weights, learning_rate, W, b, dW, db, param1_W, param1
 
 
 def NN_RMS(t, idx, new_weights, learning_rate, W, b, dW, db, param1_W, param1_b, param2_W, param2_b, param1, param2, beta=0.9, epsilon=1e-8):
+    """
+    RMSprop weight update.
 
+    Parameters
+    ----------
+    Same as NN_Moment, with:
+    beta : float, default 0.9
+        Decay rate.
+    epsilon : float, default 1e-8
+        Stability constant.
+
+    Returns
+    -------
+    None
+    """
     vW = param1_W
     vb = param1_b
     vW = beta * vW + (1 - beta) * (dW ** 2)
@@ -345,7 +725,23 @@ def NN_RMS(t, idx, new_weights, learning_rate, W, b, dW, db, param1_W, param1_b,
 
 
 def NN_ADAM(t, idx, new_weights, learning_rate, W, b, dW, db, param1_W, param1_b, param2_W, param2_b, param1, param2, beta1=0.9, beta2=0.999, epsilon=1e-8):
+    """
+    Adam optimizer update rule.
 
+    Parameters
+    ----------
+    Same as NN_RMS, with:
+    beta1 : float, default 0.9
+        First moment decay.
+    beta2 : float, default 0.999
+        Second moment decay.
+    epsilon : float, default 1e-8
+        Stability constant.
+
+    Returns
+    -------
+    None
+    """
     mW = param1_W
     mb = param1_b
     vW = param2_W
@@ -370,7 +766,24 @@ def NN_ADAM(t, idx, new_weights, learning_rate, W, b, dW, db, param1_W, param1_b
 
 
 def create_and_scale_data(state=50, n=1000, noise_std=0.01):
-    """TODO: Docstring"""
+    """
+    Create 1D Runge data and standardize it.
+
+    Parameters
+    ----------
+    state : int, default 50
+        Random seed.
+    n : int, default 1000
+        Number of samples.
+    noise_std : float, default 0.01
+        Standard deviation of Gaussian noise added to targets.
+
+    Returns
+    -------
+    tuple
+        (X_train, X_test, Y_train, Y_test, x_train, x_test, y_train, y_test)
+        Scaled training and test sets, and their unscaled counterparts.
+    """
     np.random.seed(state)
 
     x = np.linspace(-1, 1, n).reshape(-1, 1)
@@ -391,9 +804,23 @@ def create_and_scale_data(state=50, n=1000, noise_std=0.01):
 
 def create_and_scale_dataP1(state=50, n=1000, noise_std=0.01):
     """
-        Creates and scales data for polynomial features.
-    """
+    Create and scale data for polynomial regression using the Runge function.
 
+    Parameters
+    ----------
+    state : int, default 50
+        Random seed.
+    n : int, default 1000
+        Number of samples.
+    noise_std : float, default 0.01
+        Standard deviation of Gaussian noise added to targets.
+
+    Returns
+    -------
+    tuple
+        (Xtr_s, Xte_s, x_train, x_test, y_train, y_test)
+        Scaled polynomial feature matrices for train/test, and raw data.
+    """
     np.random.seed(state)
     x = np.linspace(-1, 1, n)
     y = runge(x) +  np.random.normal(0, noise_std, n)
@@ -409,3 +836,4 @@ def create_and_scale_dataP1(state=50, n=1000, noise_std=0.01):
     Xte_s = scaler.transform(Y)
 
     return Xtr_s, Xte_s, x_train2, x_test2, y_train2, y_test2
+
