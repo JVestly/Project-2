@@ -19,6 +19,15 @@ class NeuralNetwork():
         self.weights = self._create_layers_batched()
 
     def _create_layers_batched(self):
+        """
+        Initialize weights and biases for each layer.
+
+        Returns
+        -------
+        list[tuple[ndarray, ndarray]]
+            A list of `(W, b)` tuples where `W` has shape (in_features, out_features)
+            and `b` has shape (1, out_features) for each layer in `output_size`.
+        """
         layers = []
         i_size = self.input_size
         for layer_output_size in self.output_size:
@@ -28,14 +37,48 @@ class NeuralNetwork():
             i_size = layer_output_size
         return layers
     
+
     def predict(self, inputs):
+        """
+        Forward pass that returns network predictions.
+
+        Parameters
+        ----------
+        inputs : ndarray of shape (n_samples, n_features)
+            Input design matrix.
+
+        Returns
+        -------
+        ndarray
+            Network output after applying all layers and activations.
+        """
         a = inputs
         for (W, b), activation_func in zip(self.weights, self.act_func):
             z = np.matmul(a, W) + b
             a = activation_func(z)
         return a
     
+    
     def _feed_forward_saver(self, inputs):
+        """
+        Forward pass that also stores layer inputs and pre-activations.
+
+        Parameters
+        ----------
+        inputs : array-like of shape (n_samples, n_features)
+            Input data.
+
+        Returns
+        -------
+        tuple
+            (layer_inputs, zs, a)
+            layer_inputs : list
+                Activations entering each layer.
+            zs : list
+                Pre-activations for each layer.
+            a : array-like
+                Final output.
+        """
         layer_inputs = []
         zs = []
         a = inputs
@@ -46,7 +89,23 @@ class NeuralNetwork():
             zs.append(z)
         return layer_inputs, zs, a
     
+    
     def _backpropagation_batched(self, inputs, targets):
+        """
+        Compute gradients for all layers using backpropagation.
+
+        Parameters
+        ----------
+        inputs : array-like
+            Mini-batch input.
+        targets : array-like
+            Mini-batch targets.
+
+        Returns
+        -------
+        list
+            Gradients as a list of (dW, db) tuples for each layer.
+        """
         layer_inputs, zs, predict = self._feed_forward_saver(inputs)
         layer_grads = [() for _ in self.weights]
 
@@ -78,13 +137,42 @@ class NeuralNetwork():
                 
         return layer_grads
     
+    
     def feed_forward(self, a):
+        """
+        Forward pass helper.
+
+        Parameters
+        ----------
+        a : array-like of shape (n_samples, n_features)
+            Input to the first layer.
+
+        Returns
+        -------
+        array-like
+            Output after the last layer.
+        """
         for (W, b), activation_func in zip(self.weights, self.act_func):
             z = a @ W + b
             a = activation_func(z)
         return a
     
+
     def _update_weights(self, layers_grad, learning_rate):
+        """
+        Update weights and biases using the given gradients.
+
+        Parameters
+        ----------
+        layers_grad : list
+            Gradients as (dW, db) for each layer.
+        learning_rate : float
+            Step size.
+
+        Returns
+        -------
+        None
+        """
         k = 0
         for (W, b), (W_g, b_g) in zip(self.weights, layers_grad):
             if self.stopping(W_g) and self.stopping(b_g):
@@ -94,17 +182,74 @@ class NeuralNetwork():
             self.weights[k] = (W, b)
             k += 1
 
+
     def cost(self, inputs, targets):
+        """
+        Compute the cost for given inputs and targets.
+
+        Parameters
+        ----------
+        inputs : array-like
+            Input data.
+        targets : array-like
+            Target data.
+
+        Returns
+        -------
+        float
+            Cost value.
+        """
         predictions = self.predict(inputs)
         return self.cost_fun(predictions, targets)
+    
 
     def train_network(self, X_train, y_train, learning_rate=0.001, epochs=100):
+        """
+        Train the network using full-batch gradient descent.
+
+        Parameters
+        ----------
+        X_train : array-like
+            Training inputs.
+        y_train : array-like
+            Training targets.
+        learning_rate : float, default 0.001
+            Step size.
+        epochs : int, default 100
+            Number of passes over the data.
+
+        Returns
+        -------
+        None
+        """
         for i in range(epochs):
             layers_grad = self._backpropagation_batched(X_train, y_train)
             self._update_weights(layers_grad, learning_rate)
 
+
     def train_SGD(self, input_data, target_data, epochs=1000, batch_size=32, learning_rate=0.1, functional=False):
-        
+        """
+        Train the network with mini-batch SGD.
+
+        Parameters
+        ----------
+        input_data : array-like
+            Training inputs.
+        target_data : array-like
+            Training targets.
+        epochs : int, default 1000
+            Number of epochs.
+        batch_size : int, default 32
+            Mini-batch size.
+        learning_rate : float, default 0.1
+            Step size.
+        functional : callable or bool, default False
+            Optional update function. If False, use plain SGD.
+
+        Returns
+        -------
+        None
+        """
         n_samples = input_data.shape[0]
         cost_history = []
         if functional:
@@ -143,6 +288,28 @@ class NeuralNetwork():
         self.training_info["Cost_history"] = cost_history
             
     def train_SGD_v2(self, input_data, target_data, epochs=1000, batch_size=32, learning_rate=0.1, functional=False):
+            """
+        Train the network with mini-batch SGD (single random batch per epoch).
+
+        Parameters
+        ----------
+        input_data : array-like
+            Training inputs.
+        target_data : array-like
+            Training targets.
+        epochs : int, default 1000
+            Number of epochs.
+        batch_size : int, default 32
+            Mini-batch size.
+        learning_rate : float, default 0.1
+            Step size.
+        functional : callable or bool, default False
+            Optional update function. If False, use plain SGD.
+
+        Returns
+        -------
+        None
+        """
             
             rng = np.random.default_rng()
             n_samples = input_data.shape[0]
@@ -177,25 +344,81 @@ class NeuralNetwork():
 
             
     def cost_l1(self, y_true, y_pred):
+        """
+        L1-regularized mean squared error.
+
+        Parameters
+        ----------
+        y_true : array-like
+            True targets.
+        y_pred : array-like
+            Predictions.
+
+        Returns
+        -------
+        float
+            MSE + L1 penalty.
+        """
         return mse(y_true, y_pred) + self.lam * np.sum(np.sum(np.abs(W)) for W,_ in self.weights)
     
     
     def costl1_der(self, y_true, y_pred):
+        """
+        Derivative of the L1-regularized cost w.r.t. predictions.
+
+        Parameters
+        ----------
+        y_true : array-like
+            True targets.
+        y_pred : array-like
+            Predictions.
+
+        Returns
+        -------
+        array-like
+            Gradient of MSE term (penalty term handled in weight update).
+        """
         return mse_der(y_true, y_pred)
     
     
     def cost_l2(self, y_true, y_pred):
+        """
+        L2-regularized mean squared error.
+
+        Parameters
+        ----------
+        y_true : array-like
+            True targets.
+        y_pred : array-like
+            Predictions.
+
+        Returns
+        -------
+        float
+            MSE + L2 penalty.
+        """
         mse_term = mse(y_true, y_pred)
         reg_term = self.lam * sum(np.sum(W**2) for W, _ in self.weights)
         return mse_term + reg_term
 
     
     def costl2_der(self, y_true, y_pred):
+        """
+        Derivative of the L2-regularized cost w.r.t. predictions.
+
+        Parameters
+        ----------
+        y_true : array-like
+            True targets.
+        y_pred : array-like
+            Predictions.
+
+        Returns
+        -------
+        array-like
+            Gradient of MSE term (penalty term handled in weight update).
+        """
         return mse_der(y_true, y_pred)
-    
-    
-    def check_autograd(self):
-        return None
     
 
     def stopping(self, grad, e=1e-8):
@@ -416,6 +639,34 @@ class GradientDescent:
 
 
     def grad_stochastic_ADAM(self, learn_rate, init_guess, max_iter, n_epochs, tol, batch_size, epsilon, beta1=0.9, beta2=0.999):
+        """
+        Stochastic Adam with mini-batches.
+
+        Parameters
+        ----------
+        learn_rate : float
+            Learning rate.
+        init_guess : array-like
+            Initial parameter vector.
+        max_iter : int
+            Maximum iterations.
+        n_epochs : int
+            Number of epochs.
+        tol : float
+            Tolerance on gradient norm.
+        batch_size : int
+            Mini-batch size.
+        epsilon : float
+            Small number for numerical stability.
+        beta1 : float, default 0.9
+            First-moment factor.
+        beta2 : float, default 0.999
+            Second-moment factor.
+
+        Returns
+        -------
+        None
+        """
         self.theta_stoch = init_guess
         X = self._X
         y = self._y
@@ -557,52 +808,4 @@ class GradientDescent:
         return float(np.linalg.norm(grad)) < self._eps
     
 
-if __name__ == "__main__":
-    from sklearn import datasets
-    from classes import NeuralNetwork
-    from functions import *
-    from autograd import grad
-
-    np.random.seed(50)
-    n = 1000
-    x = np.linspace(-1, 1, n)
-    y = runge(x) + np.random.normal(0, 0.01, n)
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=50)
-    p = 10
-    X = polynomial_features(x_train, p)
-    Y = polynomial_features(y_train, p)
-    from sklearn.preprocessing import StandardScaler
-    scaler = StandardScaler()
-    print(x_train.shape)
-    print(x_train.reshape(-1,1).shape)
-    X_train = scaler.fit_transform(x_train.reshape(-1,1))
-    inputs, y_scaled = scale(X, y)
-    targets = (scale(Y, y))[0]
-    y_mean = np.mean(y)
-    y_centered = y_train - y_mean
-
-    m = len(targets)
-    k = len(inputs)
-
-    NNLinReg = NeuralNetwork(input=X_train, activation_ders=[sigmoid_der, sigmoid_der, identity_der], activation_funcs=[sigmoid, sigmoid, identity], input_size=k, output_size=[k,k])
-    NNLinReg2 = NeuralNetwork(input=X_train, activation_ders=[sigmoid_der, sigmoid_der], activation_funcs=[sigmoid, sigmoid], input_size=k, output_size=[k,k])
-
-
-    weights = NNLinReg2.train_network(y_train, epochs=10)
-    predictions = NNLinReg2.feed_forward()
-
-    # --- 2D Runge Plot ---
-    # fig = plt.figure(figsize=(10, 8))
-    # ax = fig.add_subplot(111, projection='3d')
-
-    # ax.plot_surface(X, Y, predictions, cmap='plasma', rstride=5, cstride=5) 
-
-    # ax.set_title("Predictions vs 2D Runge")
-    # ax.set_xlabel('X-axis')
-    # ax.set_ylabel('Y-axis')
-    # ax.set_zlabel('Z-axis (f(x, y))')
-
-    plt.plot(x_train,predictions.squeeze())
-    plt.scatter(x,y)
-    plt.show()
 
