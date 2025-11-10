@@ -22,3 +22,5 @@ tests_f.ipynb: all tests for task (f), doing classification.
 Note that the commited notebooks are already runned, but to replicate the same results or to change parameters, run all.
 
 All required packages to run the code, are listed in requirements.txt
+
+In the LLM folder, we have added links to our LLM chats (see LLM/links.md).
