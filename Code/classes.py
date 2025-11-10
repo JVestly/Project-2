@@ -121,6 +121,44 @@ class NeuralNetwork():
                 batch_idx = indices[start:end]
                 X_batch = input_data[batch_idx]
                 y_batch = target_data[batch_idx]
+                start = time.perf_counter()
+                gradients = self._backpropagation_batched(X_batch, y_batch)
+                end = time.perf_counter()
+                time_iter = format((end - start), ".2f")
+    
+                if functional:
+                    t += 1
+                    new_weights = []
+                    for idx, ((W, b), (dW, db), (param1_W, param1_b), (param2_W, param2_b)) in enumerate(zip(self.weights, gradients, param1, param2)):
+                        if self.stopping(dW) and self.stopping(db):
+                            break
+                        functional(t, idx, new_weights, learning_rate, W, b, dW, db, param1_W, param1_b, param2_W, param2_b, param1, param2)
+                    self.weights = new_weights
+
+                else:
+                    self._update_weights(gradients, learning_rate)
+        
+            
+        cost_history.append(self.cost(input_data, target_data))
+        self.training_info["Cost_history"] = cost_history
+            
+    def train_SGD_v2(self, input_data, target_data, epochs=1000, batch_size=32, learning_rate=0.1, functional=False):
+            
+            rng = np.random.default_rng()
+            n_samples = input_data.shape[0]
+            cost_history = []
+            if functional:
+                param1 = [(np.zeros_like(W), np.zeros_like(b)) for W, b in self.weights]
+                param2 = [(np.zeros_like(W), np.zeros_like(b)) for W, b in self.weights]
+                t = 0
+
+            for epoch in range(epochs):
+                indices = np.arange(n_samples)
+                np.random.shuffle(indices)
+
+                batch_idx = rng.choice(indices, batch_size, replace=False)
+                X_batch = input_data[batch_idx]
+                y_batch = target_data[batch_idx]
                 
                 gradients = self._backpropagation_batched(X_batch, y_batch)
 
@@ -133,11 +171,11 @@ class NeuralNetwork():
 
                 else:
                     self._update_weights(gradients, learning_rate)
-            
-            cost_history.append(self.cost(input_data, target_data))
-        self.training_info["Cost_history"] = cost_history
-            
+                
+                cost_history.append(self.cost(input_data, target_data))
+            self.training_info["Cost_history"] = cost_history
 
+            
     def cost_l1(self, y_true, y_pred):
         return mse(y_true, y_pred) + self.lam * np.sum(np.sum(np.abs(W)) for W,_ in self.weights)
     

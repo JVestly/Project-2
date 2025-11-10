@@ -208,7 +208,7 @@ def sigmoid(z):
 
 
 def sigmoid_der(z):
-    sig_diff = np.e**(-z)/(1+np.e**(-z))**2
+    sig_diff = np.exp(-z)/(1+np.e**(-z))**2
     return sig_diff
 
 
@@ -217,12 +217,12 @@ def reLU(z):
     return np.where(z > 0, z, 0)
 
 
-def leaky_reLU(z, alpha=0.0001):
+def leaky_reLU(z, alpha=0.1):
     """TODO: docstring"""
     return np.where(z > np.zeros(z.shape), z, alpha*z)
 
 
-def leaky_reLU_der(z, alpha=0.0001):
+def leaky_reLU_der(z, alpha=0.1):
     "TODO: ---"
     return np.where(z > 0, 1, alpha)
 
@@ -239,6 +239,30 @@ def identity(x):
 
 def identity_der(x):
     return 1
+
+
+def tanh(x):
+    return np.tanh(x)
+
+
+def tanh_der(x):
+    return 1.0 - np.tanh(x)**2
+
+
+def ELU(x, alpha=0.01):
+    return np.where(x < 0, alpha*(np.exp(x)-1), x)
+
+
+def ELU_der(x, alpha=0.01):
+    return np.where(x<0, ELU(x) + alpha, 1)
+
+
+def GELU(x):
+    return 0.5*x *(tanh(np.sqrt(2/np.pi)*(x+0.044715*x**3))) 
+
+
+def GELU_der(x):
+    return 0.5 * (1 + np.math.erf(x / np.sqrt(2))) + (x * np.exp(-x**2 / 2)) / np.sqrt(2 * np.pi)
 
 
 def mse_der(predict, target):
@@ -259,6 +283,13 @@ def runge(x):
 
 def runge2d(x,y):
     return 1 / ((10*x-5)**2 + (10*y-5)**2 + 1)
+
+def onehot(y, n=None):
+    y = np.asarray(y, dtype=int).ravel()
+    n = np.max(y) + 1 if n is None else n
+    m = np.zeros((y.size, n))
+    m[np.arange(y.size), y] = 1
+    return m
 
 
 def scale(X, y):
@@ -342,9 +373,8 @@ def create_and_scale_data(state=50, n=1000, noise_std=0.01):
     """TODO: Docstring"""
     np.random.seed(state)
 
-    n = 1000
     x = np.linspace(-1, 1, n).reshape(-1, 1)
-    y = 1/(1 + 25 * x**2) +  np.random.normal(0, noise_std, x.shape)
+    y = runge(x) +  np.random.normal(0, noise_std, x.shape)
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=state)
 
     scaler_X = StandardScaler()
@@ -360,15 +390,18 @@ def create_and_scale_data(state=50, n=1000, noise_std=0.01):
 
 
 def create_and_scale_dataP1(state=50, n=1000, noise_std=0.01):
+    """
+        Creates and scales data for polynomial features.
+    """
 
     np.random.seed(state)
     x = np.linspace(-1, 1, n)
     y = runge(x) +  np.random.normal(0, noise_std, n)
     x_train2, x_test2, y_train2, y_test2 = train_test_split(x, y, test_size=0.2, random_state=state)
 
-    n = 10
-    X = polynomial_features(x_train2, n)
-    Y = polynomial_features(x_test2, n)
+    p = 10
+    X = polynomial_features(x_train2, p)
+    Y = polynomial_features(x_test2, p)
 
 
     scaler = StandardScaler(with_mean=True, with_std=True)
