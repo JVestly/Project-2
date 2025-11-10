@@ -1,0 +1,8 @@
+All imports needed are in the import.py file.
+numpy==2.3.2
+matplotlib==3.10.6
+scipy==1.16.1
+seaborn==0.13.2
+torch==2.9.0
+scikit-learn==1.7.1
+autograd==1.8.0
