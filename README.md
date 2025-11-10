@@ -30,5 +30,5 @@ All required packages to run the code, are listed in requirements.txt
 
 In the LLM folder, we have added links to our LLM chats (see LLM/links.md).
 
-In the folder, Figures, we have added all figures used for tests in this project. The plots, maps, and tables all have suitable headlines, describing the figure. Figures with a prefix \textit{V2} contains all figures for the second version of our train_SGD method, using one minibatch per epoch.
-The prefix \textit{VB} are figures for using this SGD method.
+In the folder, Figures, we have added all figures used for tests in this project. The plots, maps, and tables all have suitable headlines, describing the figure. Figures with a prefix, V2 contains all figures for the second version of our train_SGD method, using one minibatch per epoch.
+The prefix, HM, are heatmao figures.
