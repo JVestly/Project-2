@@ -3,6 +3,16 @@
 Project authors: Amund Solum Alsvik, Jørgen Vestly & Kristoffer DH Stalker  
 
   
+## Installation
+
+All required Python packages are listed in `requirements.txt`.  
+All imports used in the project are handled via the files in the `Code/` directory.
+
+### 1. Clone the repository
+
+```bash
+git clone <repository-url>
+cd <repository-name>
 
 ---
 ### Program summary  
